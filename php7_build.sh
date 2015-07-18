@@ -79,6 +79,10 @@ sudo journalctl -xe
 # Update the paths on th system according to Ubuntu.  Can be later removed and switched back.
 sudo update-alternatives --install /usr/bin/php php /usr/local/php7/bin/php 50 --slave /usr/share/man/man1/php.1.gz php.1.gz /usr/local/php7/php/man/man1/php.1
 
+# Choose your PHP version.
+printf "Select the version of PHP you want active in subsequent shells and the system:\n"
+sudo update-alternatives --config php
+
 ## To help enable Apache 2.4 use of PHP 7. Enable this after writing the file.
 ## /etc/apache2/mods-available/php7.conf
 #<FilesMatch ".+\.ph(p[3457]?|t|tml)$">
