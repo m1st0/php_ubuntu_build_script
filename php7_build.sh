@@ -4,17 +4,40 @@
 ## Setup Ubuntu 15.04 ##
 # I like the speed of Apt-Fast.  Will check for installs some other day.
 sudo apt-get install apt-fast
-# Some dependencies to install for PHP 7.
-sudo apt-get install libldap2-dev libldap-2.4-2 libtool-bin libzip-dev lbzip2 bzip2 re2c axps
-# PHP 7 does not recognize these without additional parameters or symlinks for Ldap..
-sudo ln -fs /usr/lib/x86_64-linux-gnu/libldap.so /usr/lib/libldap.so
+# Other dependencies for PHP 7. Add any missing ones from configure script
+# complaints, plus some LAMP needs too.
+sudo apt-fast install libldap2-dev \
+  libldap-2.4-2 \
+  libtool-bin \
+  libzip-dev \
+  lbzip2 \
+  libxml2-dev \
+  bzip2 \
+  re2c \
+  libbz2-dev \
+  apache2-dev \
+  libjpeg-dev \
+  libxpm-dev \
+  libxpm-devi \
+  libgmp-dev \
+  libgmp3-dev \
+  libmcrypt-dev \
+  libmysqlclient-dev \
+  mysql-server \
+  mysql-commoni \
+  libpspell-devi \
+  librecode-dev
+# PHP 7 does not recognize these without additional parameters or symlinks for
+# Ldap.
+sudo ln -sf /usr/lib/x86_64-linux-gnu/libldap.so /usr/lib/libldap.so
 sudo ln -sf /usr/lib/x86_64-linux-gnu/liblber.so /usr/lib/liblber.so
-
+sudo ln -sf /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h
 # Obtain latest source
 git clone https://github.com/php/php-src
 cd php-src
 
-# Setup compile options for Kubuntu 15.04
+# Setup compile options for Kubuntu 15.04.  If failures occur, check dependencies
+# and symlink needs above.
 ./configure --prefix=/usr/local/php7 \
     --with-config-file-path=/etc/php7/apache2 \
     --with-config-file-scan-dir=/etc/php7/apache2/conf.d \
@@ -47,7 +70,7 @@ cd php-src
     --with-pdo-mysql=/usr \
     --with-gettext=/usr \
     --with-zlib=/usr \
-    --with-bz2=/usr \
+    --with-bz2 \
     --with-recode=/usr \
     --with-apxs2=/usr/bin/apxs \
     --with-mysqli=/usr/bin/mysql_config \
@@ -56,7 +79,8 @@ cd php-src
 # Cleanup for previous failures.
 sudo make clean
 
-# Using as many threads as possible.  Change as necessary. Will check in future for cores.
+# Using as many threads as possible.  Change as necessary. Will check in future
+# for cores.
 sudo make -j 10
 
 # Install it accoridng to the configured path.
@@ -76,11 +100,15 @@ sudo systemctl restart apache2
 # View any errors on startup.
 sudo journalctl -xe
 
-# Update the paths on th system according to Ubuntu.  Can be later removed and switched back.
-sudo update-alternatives --install /usr/bin/php php /usr/local/php7/bin/php 50 --slave /usr/share/man/man1/php.1.gz php.1.gz /usr/local/php7/php/man/man1/php.1
+# Update the paths on th system according to Ubuntu.  Can be later removed and
+# switched back.
+sudo update-alternatives --install /usr/bin/php php /usr/local/php7/bin/php 50 \
+  --slave /usr/share/man/man1/php.1.gz php.1.gz \
+  /usr/local/php7/php/man/man1/php.1
 
 # Choose your PHP version.
-printf "Select the version of PHP you want active in subsequent shells and the system:\n"
+printf "Select the version of PHP you want active in subsequent shells and the \
+  system:\n"
 sudo update-alternatives --config php
 
 ## To help enable Apache 2.4 use of PHP 7. Enable this after writing the file.
