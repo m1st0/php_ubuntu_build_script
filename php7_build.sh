@@ -36,6 +36,8 @@ sudo ln -sf /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h
 git clone https://github.com/php/php-src
 cd php-src
 
+# Helped fix configure issues.
+./buildconf
 # Setup compile options for Kubuntu 15.04.  If failures occur, check dependencies
 # and symlink needs above.
 ./configure --prefix=/usr/local/php7 \
