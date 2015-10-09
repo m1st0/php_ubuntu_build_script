@@ -18,14 +18,14 @@ sudo apt-fast install libldap2-dev \
   apache2-dev \
   libjpeg-dev \
   libxpm-dev \
-  libxpm-devi \
+  libxpm-dev \
   libgmp-dev \
   libgmp3-dev \
   libmcrypt-dev \
   libmysqlclient-dev \
   mysql-server \
-  mysql-commoni \
-  libpspell-devi \
+  mysql-common \
+  libpspell-dev \
   librecode-dev
 # PHP 7 does not recognize these without additional parameters or symlinks for
 # Ldap.
