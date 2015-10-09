@@ -4,6 +4,9 @@
 ## Setup Ubuntu 15.04 ##
 # I like the speed of Apt-Fast.  Will check for installs some other day.
 sudo apt-get install apt-fast
+# Uncomment to get the lastest updates.
+# sudo apt-fast update && sudo apt-fast upgrade
+
 # Other dependencies for PHP 7. Add any missing ones from configure script
 # complaints, plus some LAMP needs too.
 sudo apt-fast install libldap2-dev \
@@ -27,6 +30,7 @@ sudo apt-fast install libldap2-dev \
   mysql-common \
   libpspell-dev \
   librecode-dev
+
 # PHP 7 does not recognize these without additional parameters or symlinks for
 # Ldap.
 sudo ln -sf /usr/lib/x86_64-linux-gnu/libldap.so /usr/lib/libldap.so
