@@ -99,8 +99,8 @@ sudo a2enmod php7
 
 # Restart Apache if all went well.
 sudo systemctl restart apache2
-# View any errors on startup.
-sudo journalctl -xe
+# View any errors for Apache startup.
+printf "Any errors starting Apache2 with PHP7 can be seen with 'sudo journalctl -xe' .\n"
 
 # Update the paths on th system according to Ubuntu.  Can be later removed and
 # switched back.
