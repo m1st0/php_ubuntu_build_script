@@ -1,6 +1,10 @@
 #! /bin/bash
 ## PHP 7 Initial Compile ##
 
+## Some help from the various places like these. ##
+# http://www.zimuel.it/install-php-7/
+# http://www.hashbangcode.com/blog/compiling-and-installing-php7-ubuntu
+
 ## Setup Ubuntu 15.04 ##
 # I like the speed of Apt-Fast.  Will check for installs some other day.
 sudo apt-get install apt-fast
