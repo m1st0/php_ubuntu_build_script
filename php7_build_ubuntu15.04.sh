@@ -62,6 +62,7 @@ cd php-src
     --enable-sysvsem \
     --enable-sysvshm \
     --enable-wddx \
+    --enable-intl \
     --with-curl \
     --with-mcrypt \
     --with-iconv \
@@ -89,9 +90,8 @@ cd php-src
 # Cleanup for previous failures.
 sudo make clean
 
-# Using as many threads as possible.  Change as necessary. Will check in future
-# for cores.
-sudo make -j 10
+# Using as many threads as possible.
+sudo make -j `cat /proc/cpuinfo | grep processor | wc -l`
 
 # Install it accoridng to the configured path.
 sudo make install
