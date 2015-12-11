@@ -5,15 +5,11 @@
 # http://www.zimuel.it/install-php-7/
 # http://www.hashbangcode.com/blog/compiling-and-installing-php7-ubuntu
 
-## Setup Ubuntu 15.04 ##
-# I like the speed of Apt-Fast.  Will check for installs some other day.
-sudo apt-get install apt-fast
-# Uncomment to get the lastest updates.
-# sudo apt-fast update && sudo apt-fast upgrade
-
+## Setup Ubuntu 15.04/15.10 ##
 # Other dependencies for PHP 7. Add any missing ones from configure script
 # complaints, plus some LAMP needs too.
-sudo apt-fast install libldap2-dev \
+sudo apt-get update
+sudo apt-get install libldap2-dev \
   libldap-2.4-2 \
   libtool-bin \
   libzip-dev \
