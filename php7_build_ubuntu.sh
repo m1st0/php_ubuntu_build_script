@@ -39,6 +39,8 @@ sudo ln -sf /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h
 # Obtain latest source
 git clone https://github.com/php/php-src
 cd php-src
+# Checkout latest release
+git checkout PHP-7.0.3
 
 # Helped fix configure issues.
 ./buildconf
@@ -81,7 +83,8 @@ cd php-src
     --with-recode=/usr \
     --with-apxs2=/usr/bin/apxs \
     --with-mysqli=/usr/bin/mysql_config \
-    --with-ldap
+    --with-ldap \
+    --with-xdebug
 
 # Cleanup for previous failures.
 sudo make clean
