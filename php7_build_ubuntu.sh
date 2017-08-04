@@ -1,13 +1,44 @@
 #! /bin/bash
-## PHP 7 Initial Compile ##
 
-## Some help from the various places like these. ##
-# http://www.zimuel.it/install-php-7/
-# http://www.hashbangcode.com/blog/compiling-and-installing-php7-ubuntu
+# PHP 7 Initial Compile #
+# Author: Maulik Mistry
+# Date: Aug 04, 2017
+# References:
+#   http://www.zimuel.it/install-php-7/
+#   http://www.hashbangcode.com/blog/compiling-and-installing-php7-ubuntu
+#
+# License: BSD License 2.0
+# Copyright (c) 2015-2017, Maulik Mistry
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the <organization> nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-## Setup Ubuntu 15.04/15.10 ##
-# Other dependencies for PHP 7. Add any missing ones from configure script
-# complaints, plus some LAMP needs too.
+
+# Stop execution if things fail to move forward.
+set -e
+
+# Setup Kubuntu with other dependencies for PHP 7. Add any missing ones from
+# the configure script.
 sudo apt-get update
 sudo apt-get install libldap2-dev \
   libldap-2.4-2 \
@@ -29,7 +60,9 @@ sudo apt-get install libldap2-dev \
   mysql-server \
   mysql-common \
   libpspell-dev \
-  librecode-dev
+  librecode-dev \
+  libcurl4-openssl-dev \
+  libxft-dev
 
 # PHP 7 does not recognize these without additional parameters or symlinks for
 # Ldap.
@@ -40,11 +73,11 @@ sudo ln -sf /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h
 git clone https://github.com/php/php-src
 cd php-src
 # Checkout latest release
-git checkout PHP-7.0.3
+git checkout php-7.1.7
 
-# Helped fix configure issues.
-./buildconf
-# Setup compile options for Kubuntu 15.04.  If failures occur, check dependencies
+# Helped fix configure issues and ignored files needing an update.
+./buildconf --force
+# Setup compile options for Kubuntu.  If failures occur, check dependencies
 # and symlink needs above.
 ./configure --prefix=/usr/local/php7 \
     --with-config-file-path=/etc/php7/apache2 \
@@ -90,7 +123,8 @@ git checkout PHP-7.0.3
 sudo make clean
 
 # Using as many threads as possible.
-sudo make -j `cat /proc/cpuinfo | grep processor | wc -l`
+cpunum=$((`cat /proc/cpuinfo | grep processor | wc -l` + 1))
+sudo make -j ${cpunum}
 
 # Install it accoridng to the configured path.
 sudo make install
@@ -138,12 +172,12 @@ sudo update-alternatives --config php
 #</FilesMatch>
 #
 # Running PHP scripts in user directories is disabled by default
-# 
+#
 # To re-enable PHP in user directories comment the following lines
 # (from <IfModule ...> to </IfModule>.) Do NOT set it to On as it
 # prevents .htaccess files from disabling it.
 #<IfModule mod_userdir.c>
 #    <Directory /home/*/public_html>
-#        php_admin_flag engine Off 
+#        php_admin_flag engine Off
 #    </Directory>
 #</IfModule>"
