@@ -1,8 +1,7 @@
-#! /bin/bash
+#!/bin/bash
 
 # PHP 7 Initial Compile #
 # Author: Maulik Mistry
-# Date: Aug 04, 2017
 # References:
 #   http://www.zimuel.it/install-php-7/
 #   http://www.hashbangcode.com/blog/compiling-and-installing-php7-ubuntu
@@ -39,7 +38,7 @@ set -e
 
 # Setup Kubuntu with other dependencies for PHP 7. Add any missing ones from
 # the configure script.
-sudo apt-get update
+#sudo apt-get update
 sudo apt-get install libldap2-dev \
   libldap-2.4-2 \
   libtool-bin \
@@ -62,24 +61,45 @@ sudo apt-get install libldap2-dev \
   libpspell-dev \
   librecode-dev \
   libcurl4-openssl-dev \
-  libxft-dev
+  libxft-dev \
+  libonig-dev
 
 # PHP 7 does not recognize these without additional parameters or symlinks for
 # Ldap.
-sudo ln -sf /usr/lib/x86_64-linux-gnu/libldap.so /usr/lib/libldap.so
-sudo ln -sf /usr/lib/x86_64-linux-gnu/liblber.so /usr/lib/liblber.so
-sudo ln -sf /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h
+if [[ ! -e /usr/lib/libldap.so ]]; then
+  sudo ln -sf /usr/lib/x86_64-linux-gnu/libldap.so /usr/lib/libldap.so
+fi
+
+if [[ ! -e /usr/lib/liblber.so ]]; then
+  sudo ln -sf /usr/lib/x86_64-linux-gnu/liblber.so /usr/lib/liblber.so
+fi
+
+if [[ ! -e /usr/include/gmp.h ]]; then
+  sudo ln -sf /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h
+fi
+
+# Issues with pear Archive_Tar need a fix for PHP 7.2+ , especially when upgrading from it.
+# https://www.dotkernel.com/php-troubleshooting/fix-installing-pear-packages-with-php-7-2/
+# Issues with upstream pear causes make install errors. Should update or remove and reinstall
+# pear extentions and applications.
+#pear list >> installed_pear_files.txt
+#pear uninstall [various packages]
+#pear channel-update pear.php.net
+#pear upgrade
+
 # Obtain latest source
-git clone https://github.com/php/php-src
-cd php-src
+#git clone https://github.com/php/php-src
+#cd php-src
 # Checkout latest release
-git checkout php-7.1.7
+# Determine git checkout master | git checkout 7.3.0
+#git checkout php-7.3.0
 
 # Helped fix configure issues and ignored files needing an update.
 ./buildconf --force
 # Setup compile options for Kubuntu.  If failures occur, check dependencies
 # and symlink needs above.
 ./configure --prefix=/usr/local/php7 \
+    CPPFLAGS="-I/usr/include/mysql" \
     --with-config-file-path=/etc/php7/apache2 \
     --with-config-file-scan-dir=/etc/php7/apache2/conf.d \
     --enable-mbstring \
@@ -124,7 +144,7 @@ sudo make clean
 
 # Using as many threads as possible.
 cpunum=$((`cat /proc/cpuinfo | grep processor | wc -l` + 1))
-sudo make -j ${cpunum}
+sudo make -j  ${cpunum}
 
 # Install it accoridng to the configured path.
 sudo make install
