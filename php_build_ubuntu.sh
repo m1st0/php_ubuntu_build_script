@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# PHP 7 Initial Compile #
+# PHP 8 Initial Compile #
 # Author: Maulik Mistry
 # References:
 #   http://www.zimuel.it/install-php-7/
@@ -36,7 +36,7 @@
 # Stop execution if things fail to move forward.
 set -e
 
-# Setup Kubuntu with other dependencies for PHP 7. Add any missing ones from
+# Setup Kubuntu with other dependencies for PHP 8. Add any missing ones from
 # the configure script.
 #sudo apt-get update
 sudo apt-get install libldap2-dev \
@@ -64,7 +64,7 @@ sudo apt-get install libldap2-dev \
   libxft-dev \
   libonig-dev
 
-# PHP 7 does not recognize these without additional parameters or symlinks for
+# PHP 8 does not recognize these without additional parameters or symlinks for
 # Ldap.
 if [[ ! -e /usr/lib/libldap.so ]]; then
   sudo ln -sf /usr/lib/x86_64-linux-gnu/libldap.so /usr/lib/libldap.so
@@ -91,17 +91,17 @@ fi
 #git clone https://github.com/php/php-src
 #cd php-src
 # Checkout latest release
-# Determine git checkout master | git checkout 7.3.0
-#git checkout php-7.3.0
+# Determine git checkout master | git checkout 8.0.5RC1
+#git checkout php-8.0.5
 
 # Helped fix configure issues and ignored files needing an update.
 ./buildconf --force
 # Setup compile options for Kubuntu.  If failures occur, check dependencies
-# and symlink needs above.
-./configure --prefix=/usr/local/php7 \
+# and symlink needs above. PHP ini and related configuration paths shown.
+./configure --prefix="/usr/local/php8" \
     CPPFLAGS="-I/usr/include/mysql" \
-    --with-config-file-path=/etc/php7/apache2 \
-    --with-config-file-scan-dir=/etc/php7/apache2/conf.d \
+    --with-config-file-path="/usr/local/php8/etc/8.0.5/" \
+    --with-config-file-scan-dir="/usr/local/php8/etc/8.0.5/conf.d" \
     --enable-mbstring \
     --enable-zip \
     --enable-bcmath \
@@ -144,38 +144,46 @@ sudo make clean
 
 # Using as many threads as possible.
 cpunum=$((`cat /proc/cpuinfo | grep processor | wc -l` + 1))
-sudo make -j  ${cpunum}
+sudo make -j ${cpunum}
 
 # Install it accoridng to the configured path.
 sudo make install
 
-# It's own make script said to do this, but it didn't do much on my system.
+# NOTE: Provide Apache2 libphp.so .
 libtool --finish ./libs
+sudo mkdir -p "/usr/local/php8/lib/apache2/modules"
+sudo cp "./libs/libphp.so" "/usr/local/php8/lib/apache2/modules/"
+# NOTE: Update Apache2 to refer to new php.ini location below.
+# Left unconfigured between Apache2 vs CLI.
+sudo mkdir -p "/usr/local/php8/etc/8.0.5/"
+sudo cp "php.ini-development" "/usr/local/php8/etc/8.0.5/"
+sudo cp "php.ini-production" "/usr/local/php8/etc/8.0.5/"
 
 # Work on non-threaded version as compiled for now.
 sudo a2dismod mpm_worker
 sudo a2enmod mpm_prefork
 # Since it is built with axps2, it sets things up correctly.
-sudo a2enmod php7
+# NOTE: Add php8.load and php8.conf files for Apache2 accordingly.
+sudo a2enmod php8
 
 # Restart Apache if all went well.
 sudo systemctl restart apache2
 # View any errors for Apache startup.
-printf "Any errors starting Apache2 with PHP7 can be seen with 'sudo journalctl -xe' .\n"
+printf "Any errors starting Apache2 with PHP8 can be seen with 'sudo journalctl -xe' .\n"
 
 # Update the paths on th system according to Ubuntu.  Can be later removed and
 # switched back.
-sudo update-alternatives --install /usr/bin/php php /usr/local/php7/bin/php 50 \
+sudo update-alternatives --install /usr/bin/php php /usr/local/php8/bin/php 50 \
   --slave /usr/share/man/man1/php.1.gz php.1.gz \
-  /usr/local/php7/php/man/man1/php.1
+  /usr/local/php8/php/man/man1/php.1
 
 # Choose your PHP version.
 printf "Select the version of PHP you want active in subsequent shells and the \
   system:\n"
 sudo update-alternatives --config php
 
-## To help enable Apache 2.4 use of PHP 7. Enable this after writing the file.
-## /etc/apache2/mods-available/php7.conf
+## To help enable Apache 2.4 use of PHP 8. Enable this after writing the file.
+## /etc/apache2/mods-available/php8.conf
 #<FilesMatch ".+\.ph(p[3457]?|t|tml)$">
 #    SetHandler application/x-httpd-php
 #</FilesMatch>
