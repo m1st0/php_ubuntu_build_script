@@ -39,8 +39,8 @@ set -e
 # Setup Kubuntu with other dependencies for PHP 8. Add any missing ones from
 # the configure script.
 #sudo apt-get update
-sudo apt-get install libldap2-dev \
-  libldap-2.4-2 \
+sudo apt install libldap2-dev \
+  libldap-common \
   libtool-bin \
   libzip-dev \
   lbzip2 \
@@ -65,7 +65,7 @@ sudo apt-get install libldap2-dev \
   libonig-dev
 
 # PHP 8 does not recognize these without additional parameters or symlinks for
-# Ldap.
+# LDAP.
 if [[ ! -e /usr/lib/libldap.so ]]; then
   sudo ln -sf /usr/lib/x86_64-linux-gnu/libldap.so /usr/lib/libldap.so
 fi
@@ -78,21 +78,14 @@ if [[ ! -e /usr/include/gmp.h ]]; then
   sudo ln -sf /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h
 fi
 
-# Issues with pear Archive_Tar need a fix for PHP 7.2+ , especially when upgrading from it.
-# https://www.dotkernel.com/php-troubleshooting/fix-installing-pear-packages-with-php-7-2/
-# Issues with upstream pear causes make install errors. Should update or remove and reinstall
-# pear extentions and applications.
-#pear list >> installed_pear_files.txt
-#pear uninstall [various packages]
-#pear channel-update pear.php.net
-#pear upgrade
-
 # Obtain latest source
 #git clone https://github.com/php/php-src
 #cd php-src
 # Checkout latest release
-# Determine git checkout master | git checkout 8.0.5RC1
-#git checkout php-8.0.5
+# Determine git checkout master | git checkout 8.1
+#git checkout t origin/php-8.1
+php_branch="8.1"
+
 
 # Helped fix configure issues and ignored files needing an update.
 ./buildconf --force
@@ -100,10 +93,10 @@ fi
 # and symlink needs above. PHP ini and related configuration paths shown.
 ./configure --prefix="/usr/local/php8" \
     CPPFLAGS="-I/usr/include/mysql" \
-    --with-config-file-path="/usr/local/php8/etc/8.0.5/" \
-    --with-config-file-scan-dir="/usr/local/php8/etc/8.0.5/conf.d" \
+    --with-config-file-path="/usr/local/php8/etc/" \
+    --with-config-file-scan-dir="/usr/local/php8/etc/conf.d/" \
     --enable-mbstring \
-    --enable-zip \
+    --with-zip \
     --enable-bcmath \
     --enable-pcntl \
     --enable-ftp \
@@ -112,32 +105,33 @@ fi
     --enable-sysvmsg \
     --enable-sysvsem \
     --enable-sysvshm \
-    --enable-wddx \
     --enable-intl \
     --with-curl \
-    --with-mcrypt \
     --with-iconv \
     --with-gmp \
     --with-pspell \
-    --with-gd \
-    --with-jpeg-dir=/usr \
-    --with-png-dir=/usr \
     --with-zlib-dir=/usr \
-    --with-xpm-dir=/usr \
-    --with-freetype-dir=/usr \
-    --with-t1lib=/usr \
-    --enable-gd-native-ttf \
     --enable-gd-jis-conv \
     --with-openssl \
     --with-pdo-mysql=/usr \
     --with-gettext=/usr \
     --with-zlib=/usr \
     --with-bz2 \
-    --with-recode=/usr \
     --with-apxs2=/usr/bin/apxs \
     --with-mysqli=/usr/bin/mysql_config \
     --with-ldap \
-    --with-xdebug
+ #   --with-mcrypt \
+ #   --enable-wddx \
+ #   --with-gd \
+ #   --with-jpeg-dir=/usr \
+ #   --with-png-dir=/usr \
+ #   --with-xpm-dir=/usr \
+ #   --with-freetype-dir=/usr \
+ #   --with-t1lib=/usr \
+ #   --enable-gd-native-ttf \
+ #   --with-recode=/usr \
+ #   --without-xml
+ #   --with-xdebug
 
 # Cleanup for previous failures.
 sudo make clean
@@ -155,9 +149,9 @@ sudo mkdir -p "/usr/local/php8/lib/apache2/modules"
 sudo cp "./libs/libphp.so" "/usr/local/php8/lib/apache2/modules/"
 # NOTE: Update Apache2 to refer to new php.ini location below.
 # Left unconfigured between Apache2 vs CLI.
-sudo mkdir -p "/usr/local/php8/etc/8.0.5/"
-sudo cp "php.ini-development" "/usr/local/php8/etc/8.0.5/"
-sudo cp "php.ini-production" "/usr/local/php8/etc/8.0.5/"
+sudo mkdir -p "/usr/local/php8/etc/"
+sudo cp "php.ini-development" "/usr/local/php8/etc/"
+sudo cp "php.ini-production" "/usr/local/php8/etc/"
 
 # Work on non-threaded version as compiled for now.
 sudo a2dismod mpm_worker
