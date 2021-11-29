@@ -7,7 +7,7 @@
 #   http://www.hashbangcode.com/blog/compiling-and-installing-php7-ubuntu
 #
 # License: BSD License 2.0
-# Copyright (c) 2015-2017, Maulik Mistry
+# Copyright (c) 2015-2021, Maulik Mistry
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -106,6 +106,7 @@ php_branch="8.1"
     --enable-sysvsem \
     --enable-sysvshm \
     --enable-intl \
+    --enable-zts \
     --with-curl \
     --with-iconv \
     --with-gmp \
@@ -153,9 +154,12 @@ sudo mkdir -p "/usr/local/php8/etc/"
 sudo cp "php.ini-development" "/usr/local/php8/etc/"
 sudo cp "php.ini-production" "/usr/local/php8/etc/"
 
-# Work on non-threaded version as compiled for now.
-sudo a2dismod mpm_worker
-sudo a2enmod mpm_prefork
+# Work on non-threaded version
+#sudo a2dismod mpm_worker
+#sudo a2enmod mpm_prefork
+# Work on threaded --enable-zts version
+sudo a2dismod mpm_prefork
+sudo a2enmod mpm_worker
 # Since it is built with axps2, it sets things up correctly.
 # NOTE: Add php8.load and php8.conf files for Apache2 accordingly.
 sudo a2enmod php8
