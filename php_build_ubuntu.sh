@@ -82,10 +82,9 @@ fi
 #git clone https://github.com/php/php-src
 #cd php-src
 # Checkout latest release
-# Determine git checkout master | git checkout 8.1
-#git checkout t origin/php-8.1
-php_branch="8.1"
-
+# Determine git checkout master | git checkout 8.2
+git fetch
+git checkout PHP-8.2.0
 
 # Helped fix configure issues and ignored files needing an update.
 ./buildconf --force
@@ -119,8 +118,8 @@ php_branch="8.1"
     --with-zlib=/usr \
     --with-bz2 \
     --with-apxs2=/usr/bin/apxs \
-    --with-mysqli=/usr/bin/mysql_config \
     --with-ldap \
+ #   --with-mysqli=/usr/bin/mysql_config \
  #   --with-mcrypt \
  #   --enable-wddx \
  #   --with-gd \
