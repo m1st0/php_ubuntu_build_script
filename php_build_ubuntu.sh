@@ -1,13 +1,15 @@
 #!/bin/bash
 
-# PHP 8 Initial Compile #
+# PHP 8 Compile #
 # Author: Maulik Mistry
+# Please share support: https://www.paypal.com/paypalme/m1st0
 # References:
 #   http://www.zimuel.it/install-php-7/
 #   http://www.hashbangcode.com/blog/compiling-and-installing-php7-ubuntu
+#   root-talis https://gist.github.com/root-talis/40c4936bf0287237839ccd3fdfdaec28
 #
 # License: BSD License 2.0
-# Copyright (c) 2015-2021, Maulik Mistry
+# Copyright (c) 2015-2023, Maulik Mistry
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -32,12 +34,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Desired PHP branch
+PHP_VERSION="8.2.5"
+
+# Recommended setup location
+PHP_DIR="/usr/local"
 
 # Stop execution if things fail to move forward.
 set -e
 
-# Setup Kubuntu with other dependencies for PHP 8. Add any missing ones from
-# the configure script.
+## DEPENDENCIES
+
+# Setup dependencies for PHP 8
+# Add any missing needs from configuration area
 #sudo apt-get update
 sudo apt install libldap2-dev \
   libldap-common \
@@ -64,8 +73,7 @@ sudo apt install libldap2-dev \
   libxft-dev \
   libonig-dev
 
-# PHP 8 does not recognize these without additional parameters or symlinks for
-# LDAP.
+# LDAP does not recognize these without additional symlinks
 if [[ ! -e /usr/lib/libldap.so ]]; then
   sudo ln -sf /usr/lib/x86_64-linux-gnu/libldap.so /usr/lib/libldap.so
 fi
@@ -78,22 +86,27 @@ if [[ ! -e /usr/include/gmp.h ]]; then
   sudo ln -sf /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h
 fi
 
-# Obtain latest source
-#git clone https://github.com/php/php-src
-#cd php-src
-# Checkout latest release
-# Determine git checkout master | git checkout 8.2
-git fetch
-git checkout PHP-8.2.0
+## CONFIGURE
 
-# Helped fix configure issues and ignored files needing an update.
+# Obtain desired branch or source
+if [ -d ./php-src ]; then
+  cd php-src
+  git reset --hard HEAD
+  git pull origin "PHP-$PHP_VERSION"
+else
+  # Obtain latest source
+  git clone -b "PHP-$PHP_VERSION" --single-branch https://github.com/php/php-src
+  cd php-src
+fi
+
+# Helped fix configure issues and ignored files needing an update
 ./buildconf --force
-# Setup compile options for Kubuntu.  If failures occur, check dependencies
-# and symlink needs above. PHP ini and related configuration paths shown.
-./configure --prefix="/usr/local/php8" \
+
+# Compile options
+./configure --prefix="$PHP_DIR/php8" \
     CPPFLAGS="-I/usr/include/mysql" \
-    --with-config-file-path="/usr/local/php8/etc/" \
-    --with-config-file-scan-dir="/usr/local/php8/etc/conf.d/" \
+    --with-config-file-path="$PHP_DIR/php8/etc/" \
+    --with-config-file-scan-dir="$PHP_DIR/php8/etc/conf.d/" \
     --enable-mbstring \
     --with-zip \
     --enable-bcmath \
@@ -113,13 +126,16 @@ git checkout PHP-8.2.0
     --with-zlib-dir=/usr \
     --enable-gd-jis-conv \
     --with-openssl \
-    --with-pdo-mysql=/usr \
     --with-gettext=/usr \
     --with-zlib=/usr \
     --with-bz2 \
     --with-apxs2=/usr/bin/apxs \
     --with-ldap \
- #   --with-mysqli=/usr/bin/mysql_config \
+    --with-mysql=mysqlnd \
+    --with-mysqli=mysqlnd \
+    --with-pdo-mysql=mysqlnd \
+    --with-openssl \
+    --with-xdebug
  #   --with-mcrypt \
  #   --enable-wddx \
  #   --with-gd \
@@ -127,31 +143,43 @@ git checkout PHP-8.2.0
  #   --with-png-dir=/usr \
  #   --with-xpm-dir=/usr \
  #   --with-freetype-dir=/usr \
- #   --with-t1lib=/usr \
  #   --enable-gd-native-ttf \
  #   --with-recode=/usr \
  #   --without-xml
- #   --with-xdebug
 
-# Cleanup for previous failures.
-sudo make clean
+## COMPILE
 
-# Using as many threads as possible.
-cpunum=$((`cat /proc/cpuinfo | grep processor | wc -l` + 1))
-sudo make -j ${cpunum}
+# Cleanup for previous failures
+make clean
 
-# Install it accoridng to the configured path.
+# Build 
+cpunum=`nproc`
+make -j ${cpunum}
+
+# Install
 sudo make install
 
-# NOTE: Provide Apache2 libphp.so .
+# Update paths for easy switching
+sudo update-alternatives --install /usr/bin/php php $PHP_DIR/php8/bin/php 50 \
+  --slave /usr/share/man/man1/php.1.gz php.1.gz \
+  $PHP_DIR/php8/php/man/man1/php.1
+
+# Provide PHP version choice
+printf "Select the version of PHP you want active in subsequent shells and the \
+  system:\n"
+sudo update-alternatives --config php
+
+## APACHE SETUP
+
+# Provide Apache2 libphp.so for later configuration
 libtool --finish ./libs
-sudo mkdir -p "/usr/local/php8/lib/apache2/modules"
-sudo cp "./libs/libphp.so" "/usr/local/php8/lib/apache2/modules/"
-# NOTE: Update Apache2 to refer to new php.ini location below.
-# Left unconfigured between Apache2 vs CLI.
-sudo mkdir -p "/usr/local/php8/etc/"
-sudo cp "php.ini-development" "/usr/local/php8/etc/"
-sudo cp "php.ini-production" "/usr/local/php8/etc/"
+sudo mkdir -p "$PHP_DIR/php8/lib/apache2/modules"
+sudo cp "./libs/libphp.so" "$PHP_DIR/php8/lib/apache2/modules/"
+
+# Left unconfigured between Apache2 vs CLI
+sudo mkdir -p "$PHP_DIR/php8/etc/"
+sudo cp "php.ini-development" "$PHP_DIR/php8/etc/"
+sudo cp "php.ini-production" "$PHP_DIR/php8/etc/"
 
 # Work on non-threaded version
 #sudo a2dismod mpm_worker
@@ -159,48 +187,43 @@ sudo cp "php.ini-production" "/usr/local/php8/etc/"
 # Work on threaded --enable-zts version
 sudo a2dismod mpm_prefork
 sudo a2enmod mpm_worker
-# Since it is built with axps2, it sets things up correctly.
-# NOTE: Add php8.load and php8.conf files for Apache2 accordingly.
-sudo a2enmod php8
+
+if [[ ! -e /etc/apache2/mods-available/php8.conf ]]; then
+  printf "<IfModule php_module>\n" | sudo tee /etc/apache2/mods-available/php8.conf 1> /dev/null
+  printf "\t<FilesMatch \".+\\\.ph(p[3457]\?|t|tml)\$\">\n" | sudo tee /etc/apache2/mods-available/php8.conf 1> /dev/null
+  printf "\t\tSetHandler application/x-httpd-php\n" | sudo tee -a /etc/apache2/mods-available/php8.conf 1> /dev/null
+  printf "\t\tRequire all denied\n" | sudo tee -a /etc/apache2/mods-available/php8.conf 1> /dev/null
+  printf "\t</FilesMatch>\n" | sudo tee -a /etc/apache2/mods-available/php8.conf 1> /dev/null
+  printf "\t<FilesMatch \".+\\\.phps\$\">\n" | sudo tee -a /etc/apache2/mods-available/php8.conf 1> /dev/null
+  printf "\t\tSetHandler application/x-httpd-php-source\n" | sudo tee -a /etc/apache2/mods-available/php8.conf 1> /dev/null
+  printf "\t\tRequire all denied\n" | sudo tee -a /etc/apache2/mods-available/php8.conf 1> /dev/null
+  printf "\t</FilesMatch>\n" | sudo tee -a /etc/apache2/mods-available/php8.conf 1> /dev/null
+  printf "</IfModule>\n" | sudo tee -a /etc/apache2/mods-available/php8.conf 1> /dev/null
+  sudo a2disconf php
+  sudo a2enconf php8
+fi
+
+if [[ ! -e /etc/apache2/mods-available/php8.load ]]; then
+  APACHE_LOAD_PHP8="LoadModule php_module\t$PHP_DIR/php8/lib/apache2/modules/libphp8.so"
+  printf "$APACHE_LOAD_PHP8\n" | sudo tee /etc/apache2/mods-available/php8.load 1> /dev/null
+  sudo a2dismod php
+  sudo a2enmod php8
+fi
 
 # Restart Apache if all went well.
 sudo systemctl restart apache2
 # View any errors for Apache startup.
 printf "Any errors starting Apache2 with PHP8 can be seen with 'sudo journalctl -xe' .\n"
 
-# Update the paths on th system according to Ubuntu.  Can be later removed and
-# switched back.
-sudo update-alternatives --install /usr/bin/php php /usr/local/php8/bin/php 50 \
-  --slave /usr/share/man/man1/php.1.gz php.1.gz \
-  /usr/local/php8/php/man/man1/php.1
-
-# Choose your PHP version.
-printf "Select the version of PHP you want active in subsequent shells and the \
-  system:\n"
-sudo update-alternatives --config php
-
-## To help enable Apache 2.4 use of PHP 8. Enable this after writing the file.
-## /etc/apache2/mods-available/php8.conf
-#<FilesMatch ".+\.ph(p[3457]?|t|tml)$">
-#    SetHandler application/x-httpd-php
-#</FilesMatch>
-#<FilesMatch ".+\.phps$">
-#    SetHandler application/x-httpd-php-source
-#    # Deny access to raw php sources by default
-#    # To re-enable it's recommended to enable access to the files
-#    # only in specific virtual host or directory
-#    Require all denied
-#</FilesMatch>
-# Deny access to files without filename (e.g. '.php')
-#<FilesMatch "^\.ph(p[345]?|t|tml|ps)$">
-#    Require all denied
-#</FilesMatch>
-#
+# Example:
+# 
 # Running PHP scripts in user directories is disabled by default
+# 
+# You may commnt this out as needed in conf files at
+# /etc/apache2/mods-available/
+# to re-enable PHP in user directories
+# from <IfModule> to </IfModule>
 #
-# To re-enable PHP in user directories comment the following lines
-# (from <IfModule ...> to </IfModule>.) Do NOT set it to On as it
-# prevents .htaccess files from disabling it.
 #<IfModule mod_userdir.c>
 #    <Directory /home/*/public_html>
 #        php_admin_flag engine Off
