@@ -95,7 +95,7 @@ if [ -d ./php-src ]; then
   git pull origin "PHP-$PHP_VERSION"
 else
   # Obtain latest source
-  git clone -b "PHP-$PHP_VERSION" --single-branch https://github.com/php/php-src
+  git clone -b "PHP-$PHP_VERSION" https://github.com/php/php-src
   cd php-src
 fi
 
@@ -181,41 +181,57 @@ sudo mkdir -p "$PHP_DIR/php8/etc/"
 sudo cp "php.ini-development" "$PHP_DIR/php8/etc/"
 sudo cp "php.ini-production" "$PHP_DIR/php8/etc/"
 
-# Work on non-threaded version
+# Work on non-threaded version from configure
 #sudo a2dismod mpm_worker
 #sudo a2enmod mpm_prefork
-# Work on threaded --enable-zts version
+# Work on threaded --enable-zts version from configure
 sudo a2dismod mpm_prefork
 sudo a2enmod mpm_worker
 
-if [[ ! -e /etc/apache2/mods-available/php8.conf ]]; then
-  printf "<IfModule php_module>\n" | sudo tee /etc/apache2/mods-available/php8.conf 1> /dev/null
-  printf "\t<FilesMatch \".+\\\.ph(p[3457]\?|t|tml)\$\">\n" | sudo tee /etc/apache2/mods-available/php8.conf 1> /dev/null
-  printf "\t\tSetHandler application/x-httpd-php\n" | sudo tee -a /etc/apache2/mods-available/php8.conf 1> /dev/null
-  printf "\t\tRequire all denied\n" | sudo tee -a /etc/apache2/mods-available/php8.conf 1> /dev/null
-  printf "\t</FilesMatch>\n" | sudo tee -a /etc/apache2/mods-available/php8.conf 1> /dev/null
-  printf "\t<FilesMatch \".+\\\.phps\$\">\n" | sudo tee -a /etc/apache2/mods-available/php8.conf 1> /dev/null
-  printf "\t\tSetHandler application/x-httpd-php-source\n" | sudo tee -a /etc/apache2/mods-available/php8.conf 1> /dev/null
-  printf "\t\tRequire all denied\n" | sudo tee -a /etc/apache2/mods-available/php8.conf 1> /dev/null
-  printf "\t</FilesMatch>\n" | sudo tee -a /etc/apache2/mods-available/php8.conf 1> /dev/null
-  printf "</IfModule>\n" | sudo tee -a /etc/apache2/mods-available/php8.conf 1> /dev/null
-  sudo a2disconf php
-  sudo a2enconf php8
+PHP_MODULE_CONF="/etc/apache2/mods-available/php8.conf"
+if [[ ! -e "$PHP_MODULE_CONF" ]]; then
+  sudo tee "$PHP_MODULE_CONF" > /dev/null <<EOF
+<IfModule php_module>
+  <FilesMatch ".+\.ph(ar|p|tml)$">
+    SetHandler application/x-httpd-php
+  </FilesMatch>
+  <FilesMatch ".+\.phps$">
+    SetHandler application/x-httpd-php-source
+    
+    # Deny access to raw php sources by default
+    # To re-enable it's recommended to enable access to the files
+    # only in specific virtual host or directory
+    Require all denied
+  </FilesMatch>
+
+  # Deny access to files without filename (e.g. '.php')
+  <FilesMatch "^\.ph(ar|p|ps|tml)$">
+    Require all denied
+  </FilesMatch>
+</IfModule>
+EOF
+
 fi
 
-if [[ ! -e /etc/apache2/mods-available/php8.load ]]; then
-  APACHE_LOAD_PHP8="LoadModule php_module\t$PHP_DIR/php8/lib/apache2/modules/libphp.so"
-  printf "$APACHE_LOAD_PHP8\n" | sudo tee /etc/apache2/mods-available/php8.load 1> /dev/null
-  sudo a2dismod php
-  sudo a2enmod php8
+PHP_MODULE_LOAD="/etc/apache2/mods-available/php8.load"
+if [[ ! -e "$PHP_MODULE_LOAD" ]]; then
+  sudo tee "$PHP_MODULE_LOAD" > /dev/null <<EOF
+LoadModule php_module		$PHP_DIR/php8/lib/apache2/modules/libphp.so
+EOF
+
 fi
+
+sudo a2dismod php
+sudo a2enmod php8
 
 # Restart Apache if all went well.
 sudo systemctl restart apache2
-# View any errors for Apache startup.
-printf "Any errors starting Apache2 with PHP8 can be seen with 'sudo journalctl -xe' .\n"
+sudo systemctl status apache2
 
-# Example:
+# View any errors for Apache startup.
+printf "Any errors starting Apache2 with PHP $PHP_VERSION can be seen with 'sudo journalctl -xe' .\n"
+
+# An example:
 # 
 # Running PHP scripts in user directories is disabled by default
 # 
