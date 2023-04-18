@@ -204,7 +204,7 @@ if [[ ! -e /etc/apache2/mods-available/php8.conf ]]; then
 fi
 
 if [[ ! -e /etc/apache2/mods-available/php8.load ]]; then
-  APACHE_LOAD_PHP8="LoadModule php_module\t$PHP_DIR/php8/lib/apache2/modules/libphp8.so"
+  APACHE_LOAD_PHP8="LoadModule php_module\t$PHP_DIR/php8/lib/apache2/modules/libphp.so"
   printf "$APACHE_LOAD_PHP8\n" | sudo tee /etc/apache2/mods-available/php8.load 1> /dev/null
   sudo a2dismod php
   sudo a2enmod php8
