@@ -88,7 +88,7 @@ fi
 
 ## CONFIGURE
 
-# Obtain desired branch or source
+# Obtain desired branch or source; change into location
 if [ -d ./php-src ]; then
   cd php-src
   git reset --hard HEAD
@@ -172,6 +172,7 @@ sudo update-alternatives --config php
 ## APACHE SETUP
 
 # Provide Apache2 libphp.so for later configuration
+printf "Running 'libtool --finish ./libs' as recommended.\n"
 libtool --finish ./libs
 sudo mkdir -p "$PHP_DIR/php8/lib/apache2/modules"
 sudo cp "./libs/libphp.so" "$PHP_DIR/php8/lib/apache2/modules/"
@@ -245,3 +246,6 @@ printf "Any errors starting Apache2 with PHP $PHP_VERSION can be seen with 'sudo
 #        php_admin_flag engine Off
 #    </Directory>
 #</IfModule>"
+
+# Return to reprevious location
+cd -
