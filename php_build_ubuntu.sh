@@ -34,8 +34,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Desired PHP branch
-PHP_VERSION="8.2.5"
+# Desired PHP branch if not using git tag autodetection
+PHP_VERSION="8.3.0"
 
 # Recommended setup location
 PHP_DIR="/usr/local"
@@ -71,7 +71,8 @@ sudo apt install libldap2-dev \
   librecode-dev \
   libcurl4-openssl-dev \
   libxft-dev \
-  libonig-dev
+  libonig-dev \
+  libsqlite3-dev
 
 # LDAP does not recognize these without additional symlinks
 if [[ ! -e /usr/lib/libldap.so ]]; then
@@ -88,15 +89,24 @@ fi
 
 ## CONFIGURE
 
-# Obtain desired branch or source; change into location
+if [ ! -d ./php-src ]; then
+  git clone https://github.com/php/php-src
+fi
+
 if [ -d ./php-src ]; then
-  cd php-src
+  cd ./php-src
+  # Obtain latest tag
   git reset --hard HEAD
-  git pull origin "PHP-$PHP_VERSION"
+  git fetch --tags
+  # Sometimes the latest tag is not properly found using either of the following
+  #tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+  #tag=$(git describe --tags `git rev-list --branches --max-count=1`)  
+  #git checkout tags/$tag -b $tag
+  git checkout tags/php-${PHP_VERSION} -b PHP-${PHP_VERSION}
 else
-  # Obtain latest source
-  git clone -b "PHP-$PHP_VERSION" https://github.com/php/php-src
-  cd php-src
+  git clone https://github.com/php/php-src
+  cd ./php-src
+  git checkout tags/php-${PHP_VERSION} -b PHP-${PHP_VERSION}
 fi
 
 # Helped fix configure issues and ignored files needing an update
@@ -230,7 +240,7 @@ sudo systemctl restart apache2
 sudo systemctl status apache2
 
 # View any errors for Apache startup.
-printf "Any errors starting Apache2 with PHP $PHP_VERSION can be seen with 'sudo journalctl -xe' .\n"
+printf "Any errors starting Apache2 with PHP can be seen with 'sudo journalctl -xe' .\n"
 
 # An example:
 # 
