@@ -9,7 +9,7 @@
 #   root-talis https://gist.github.com/root-talis/40c4936bf0287237839ccd3fdfdaec28
 #
 # License: BSD License 2.0
-# Copyright (c) 2015-2023, Maulik Mistry
+# Copyright (c) 2015-2025, Maulik Mistry
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,10 +34,15 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Desired PHP branch if not using git tag autodetection
-PHP_VERSION="8.3.0"
+# Text message colors
+RED="\033[0;31m"
+YELLOW="\033[0;33m"
+END_TEXT="\033[0m"
 
-# Recommended setup location
+# Desired PHP branch if not using git tag autodetection
+PHP_VERSION="8.4.3"
+
+# I like to setup thing here so that it doesn't bother Kubuntu/Ubuntu
 PHP_DIR="/usr/local"
 
 # Stop execution if things fail to move forward.
@@ -47,7 +52,9 @@ set -e
 
 # Setup dependencies for PHP 8
 # Add any missing needs from configuration area
-#sudo apt-get update
+#sudo apt update
+#sudo apt upgrade
+#sudo apt clean
 sudo apt install libldap2-dev \
   libldap-common \
   libtool-bin \
@@ -89,24 +96,29 @@ fi
 
 ## CONFIGURE
 
-if [ ! -d ./php-src ]; then
-  git clone https://github.com/php/php-src
-fi
-
 if [ -d ./php-src ]; then
-  cd ./php-src
-  # Obtain latest tag
+  cd ./php-src 
   git reset --hard HEAD
-  git fetch --tags
+  git fetch --tags --force
+  
+  # Check if we are already on the desired tag
+  if [ "$(git describe --tags --exact-match 2>/dev/null)" != "php-${PHP_VERSION}" ]; then
+    git checkout "php-${PHP_VERSION}" 2>/dev/null || git checkout -b "PHP-${PHP_VERSION}" "php-${PHP_VERSION}"
+  else
+    printf "\n${YELLOW}Already on php-${PHP_VERSION}${END_TEXT}\n"
+  fi
+
+  # Obtain latest tag
   # Sometimes the latest tag is not properly found using either of the following
+  # or we don't want the latest Release Candidate
   #tag=$(git describe --tags `git rev-list --tags --max-count=1`)
   #tag=$(git describe --tags `git rev-list --branches --max-count=1`)  
   #git checkout tags/$tag -b $tag
-  git checkout tags/php-${PHP_VERSION} -b PHP-${PHP_VERSION}
+  #git checkout tags/php-${PHP_VERSION} -b PHP-${PHP_VERSION}
 else
   git clone https://github.com/php/php-src
   cd ./php-src
-  git checkout tags/php-${PHP_VERSION} -b PHP-${PHP_VERSION}
+  git switch --create PHP-${PHP_VERSION} php-${PHP_VERSION}
 fi
 
 # Helped fix configure issues and ignored files needing an update
@@ -163,8 +175,8 @@ fi
 make clean
 
 # Build 
-cpunum=`nproc`
-make -j ${cpunum}
+CPUNUM=`nproc`
+make -j ${CPUNUM}
 
 # Install
 sudo make install
@@ -240,7 +252,7 @@ sudo systemctl restart apache2
 sudo systemctl status apache2
 
 # View any errors for Apache startup.
-printf "Any errors starting Apache2 with PHP can be seen with 'sudo journalctl -xe' .\n"
+printf "\n${YELLOW}Any errors starting Apache2 with PHP can be seen with 'sudo journalctl -xe' .${END_TEXT}\n"
 
 # An example:
 # 
