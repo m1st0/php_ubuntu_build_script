@@ -40,7 +40,7 @@ YELLOW="\033[0;33m"
 END_TEXT="\033[0m"
 
 # Desired PHP branch if not using git tag autodetection
-PHP_VERSION="8.4.3"
+PHP_VERSION="8.4.6"
 
 # I like to setup thing here so that it doesn't bother Kubuntu/Ubuntu
 PHP_DIR="/usr/local"
