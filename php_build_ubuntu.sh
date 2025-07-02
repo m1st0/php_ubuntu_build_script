@@ -40,7 +40,7 @@ YELLOW="\033[0;33m"
 END_TEXT="\033[0m"
 
 # Desired PHP branch if not using git tag autodetection
-PHP_VERSION="8.4.6"
+PHP_VERSION="8.4.9"
 
 # I like to setup thing here so that it doesn't bother Kubuntu/Ubuntu
 PHP_DIR="/usr/local"
@@ -71,15 +71,32 @@ sudo apt install libldap2-dev \
   libgmp-dev \
   libgmp3-dev \
   libmcrypt-dev \
-  libmysqlclient-dev \
-  mysql-server \
-  mysql-common \
   libpspell-dev \
   librecode-dev \
   libcurl4-openssl-dev \
   libxft-dev \
   libonig-dev \
-  libsqlite3-dev
+  libsqlite3-dev \
+  ccache
+
+  if dpkg -l | grep -q '^ii  mysql-server'; then
+    echo "MySQL server detected."
+    USE_MYSQL=1
+  elif dpkg -l | grep -q '^ii  mariadb-server'; then
+    echo "MariaDB server detected."
+    USE_MARIADB=1
+  else
+    echo "No MySQL or MariaDB server found."
+    # Decide on default or exit
+    exit 1
+  fi
+
+  if [ "$USE_MYSQL" = "1" ]; then
+    sudo apt install libmysqlclient-dev
+  elif [ "$USE_MARIADB" = "1" ]; then
+    sudo apt install libmariadb-dev
+  fi
+
 
 # LDAP does not recognize these without additional symlinks
 if [[ ! -e /usr/lib/libldap.so ]]; then
@@ -125,8 +142,8 @@ fi
 ./buildconf --force
 
 # Compile options
+export CC="ccache gcc" && export CXX="ccache g++"
 ./configure --prefix="$PHP_DIR/php8" \
-    CPPFLAGS="-I/usr/include/mysql" \
     --with-config-file-path="$PHP_DIR/php8/etc/" \
     --with-config-file-scan-dir="$PHP_DIR/php8/etc/conf.d/" \
     --enable-mbstring \
@@ -156,7 +173,6 @@ fi
     --with-mysql=mysqlnd \
     --with-mysqli=mysqlnd \
     --with-pdo-mysql=mysqlnd \
-    --with-openssl \
     --with-xdebug
  #   --with-mcrypt \
  #   --enable-wddx \
