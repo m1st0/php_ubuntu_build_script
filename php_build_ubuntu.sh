@@ -68,7 +68,6 @@ if [ "$USE_MYSQL" = "1" ]; then
 elif [ "$USE_MARIADB" = "1" ]; then
   sudo apt install libmariadb-dev
 fi
-
 messenger_end "Done installing dependencies."
 
 messenger_std "Setting up LDAP dependency recognition...";

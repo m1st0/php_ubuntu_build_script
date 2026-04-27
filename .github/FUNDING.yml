@@ -1,3 +1,5 @@
-custom:
-  - https://www.paypal.com/paypalme/m1st0
-  - https://venmo.com/code?user_id=3319592654995456106&created=1753283702
+github: m1st0
+custom: [
+  "https://www.paypal.com/paypalme/m1st0", 
+  "https://venmo.com/code?user_id=3319592654995456106&created=1753283702"
+]
