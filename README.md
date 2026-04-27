@@ -60,7 +60,7 @@ See [`LICENSE.txt`](LICENSE.txt) for full details.
 
 If you find this script helpful, consider supporting me:
 
-- **PayPal**: [paypal.me/m1st0](https://www.paypal.com/paypalme/m1st0)
-- **Venmo**: [venmo.com/m1st0](https://venmo.com/m1st0)
+- **PayPal**: [Paypal](https://www.paypal.com/paypalme/m1st0)
+- **Venmo**: [Venmo](https://venmo.com/code?user_id=3319592654995456106&created=1753283702)
 
 _Lets keep each other going, safe, and well._
