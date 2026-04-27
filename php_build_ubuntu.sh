@@ -1,46 +1,19 @@
 #!/bin/bash
+# php_build_ubuntu.sh - script to compile PHP 8 for Ubuntu testing.
 
-# PHP 8 Compile #
+# Copyright (c) 2019-2026 Maulik Mistry mistry01@gmail.com
+#
 # Author: Maulik Mistry
 # Please share support: https://www.paypal.com/paypalme/m1st0
-# References:
-#   http://www.zimuel.it/install-php-7/
-#   http://www.hashbangcode.com/blog/compiling-and-installing-php7-ubuntu
-#   root-talis https://gist.github.com/root-talis/40c4936bf0287237839ccd3fdfdaec28
-#
+#                       https://venmo.com/code?user_id=3319592654995456106&created=1753283702
 # License: BSD License 2.0
-# Copyright (c) 2015-2025, Maulik Mistry
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#     * Redistributions of source code must retain the above copyright
-#       notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright
-#       notice, this list of conditions and the following disclaimer in the
-#       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the <organization> nor the
-#       names of its contributors may be used to endorse or promote products
-#       derived from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Text message colors
-RED="\033[0;31m"
-YELLOW="\033[0;33m"
-END_TEXT="\033[0m"
+# Using BASH_SOURCE for better path reliability in Bash
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+source "${SCRIPT_DIR}/bash_color_printf.sh"
 
 # Desired PHP branch if not using git tag autodetection
-PHP_VERSION="8.4.9"
+PHP_VERSION="8.5.1"
 
 # I like to setup thing here so that it doesn't bother Kubuntu/Ubuntu
 PHP_DIR="/usr/local"
@@ -50,7 +23,7 @@ set -e
 
 ## DEPENDENCIES
 
-# Setup dependencies for PHP 8
+messenger_std "Installing dependencies...";
 # Add any missing needs from configuration area
 #sudo apt update
 #sudo apt upgrade
@@ -79,26 +52,26 @@ sudo apt install libldap2-dev \
   libsqlite3-dev \
   ccache
 
-  if dpkg -l | grep -q '^ii  mysql-server'; then
-    echo "MySQL server detected."
-    USE_MYSQL=1
-  elif dpkg -l | grep -q '^ii  mariadb-server'; then
-    echo "MariaDB server detected."
-    USE_MARIADB=1
-  else
-    echo "No MySQL or MariaDB server found."
-    # Decide on default or exit
-    exit 1
-  fi
+if dpkg -l | grep -q '^ii  mysql-server'; then
+  messenger_std "MySQL server detected. Using MySQL."
+  USE_MYSQL=1
+elif dpkg -l | grep -q '^ii  mariadb-server'; then
+  messenger_std "MariaDB server detected. Using MariaDB."
+  USE_MARIADB=1
+else
+  messenger_end "No MySQL or MariaDB found. Cannot install database dependencies."
+  exit 1
+fi
 
-  if [ "$USE_MYSQL" = "1" ]; then
-    sudo apt install libmysqlclient-dev
-  elif [ "$USE_MARIADB" = "1" ]; then
-    sudo apt install libmariadb-dev
-  fi
+if [ "$USE_MYSQL" = "1" ]; then
+  sudo apt install libmysqlclient-dev
+elif [ "$USE_MARIADB" = "1" ]; then
+  sudo apt install libmariadb-dev
+fi
 
+messenger_end "Done installing dependencies."
 
-# LDAP does not recognize these without additional symlinks
+messenger_std "Setting up LDAP dependency recognition...";
 if [[ ! -e /usr/lib/libldap.so ]]; then
   sudo ln -sf /usr/lib/x86_64-linux-gnu/libldap.so /usr/lib/libldap.so
 fi
@@ -110,6 +83,7 @@ fi
 if [[ ! -e /usr/include/gmp.h ]]; then
   sudo ln -sf /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h
 fi
+messenger_end "Done with LDAP setup."
 
 ## CONFIGURE
 
@@ -122,25 +96,33 @@ if [ -d ./php-src ]; then
   if [ "$(git describe --tags --exact-match 2>/dev/null)" != "php-${PHP_VERSION}" ]; then
     git checkout "php-${PHP_VERSION}" 2>/dev/null || git checkout -b "PHP-${PHP_VERSION}" "php-${PHP_VERSION}"
   else
-    printf "\n${YELLOW}Already on php-${PHP_VERSION}${END_TEXT}\n"
+    messenger_std "Already on php-${PHP_VERSION}"
   fi
 
-  # Obtain latest tag
+  ## Obtain latest tag ##
   # Sometimes the latest tag is not properly found using either of the following
   # or we don't want the latest Release Candidate
   #tag=$(git describe --tags `git rev-list --tags --max-count=1`)
-  #tag=$(git describe --tags `git rev-list --branches --max-count=1`)  
-  #git checkout tags/$tag -b $tag
-  #git checkout tags/php-${PHP_VERSION} -b PHP-${PHP_VERSION}
+  tag=$(git describe --tags `git rev-list --branches --max-count=1`)
+  if [ "$tag" != "php-${PHP_VERSION}" ]; then
+    git switch --create ${tag} ${tag}
+  fi
 else
   git clone https://github.com/php/php-src
   cd ./php-src
-  git switch --create PHP-${PHP_VERSION} php-${PHP_VERSION}
+  tag=$(git describe --tags `git rev-list --branches --max-count=1`)
+  git checkout tags/$tag -b $tag
+  #git switch --create PHP-${PHP_VERSION} php-${PHP_VERSION}
 fi
 
+messenger_std "Running 'buildconf' ..."
 # Helped fix configure issues and ignored files needing an update
 ./buildconf --force
+messenger_end "Done 'buildconf' ."
 
+## CONFIGURE
+
+messenger_std "Running 'configure' ..."
 # Compile options
 export CC="ccache gcc" && export CXX="ccache g++"
 ./configure --prefix="$PHP_DIR/php8" \
@@ -185,47 +167,54 @@ export CC="ccache gcc" && export CXX="ccache g++"
  #   --with-recode=/usr \
  #   --without-xml
 
+ messenger_end "Done with 'configure' ."
+
 ## COMPILE
 
-# Cleanup for previous failures
+messenger_std "Cleaning previous failures with 'make clean' ..."
 make clean
+messenger_end "Done wit 'make clean' ."
 
-# Build 
+messenger_std "Running 'make' ..."
 CPUNUM=`nproc`
 make -j ${CPUNUM}
+messenger_end "Done with 'make' ."
 
-# Install
+messenger_std "Running 'make install' ..."
 sudo make install
+messenger_end "Done with 'make install' ."
 
 # Update paths for easy switching
 sudo update-alternatives --install /usr/bin/php php $PHP_DIR/php8/bin/php 50 \
   --slave /usr/share/man/man1/php.1.gz php.1.gz \
   $PHP_DIR/php8/php/man/man1/php.1
 
-# Provide PHP version choice
-printf "Select the version of PHP you want active in subsequent shells and the \
-  system:\n"
+messenger_std "Select the version of PHP you want active in subsequent shells and the system:"
 sudo update-alternatives --config php
 
 ## APACHE SETUP
 
 # Provide Apache2 libphp.so for later configuration
-printf "Running 'libtool --finish ./libs' as recommended.\n"
+messenger_std "Running 'libtool --finish ./libs' ..."
 libtool --finish ./libs
 sudo mkdir -p "$PHP_DIR/php8/lib/apache2/modules"
 sudo cp "./libs/libphp.so" "$PHP_DIR/php8/lib/apache2/modules/"
+messenger_end "Done running 'libtool' ."
 
 # Left unconfigured between Apache2 vs CLI
 sudo mkdir -p "$PHP_DIR/php8/etc/"
 sudo cp "php.ini-development" "$PHP_DIR/php8/etc/"
 sudo cp "php.ini-production" "$PHP_DIR/php8/etc/"
 
-# Work on non-threaded version from configure
+# messenger_std "Enable non-threaded mpm_worker module..."
 #sudo a2dismod mpm_worker
 #sudo a2enmod mpm_prefork
-# Work on threaded --enable-zts version from configure
+# messenger_end "Done with mpm_worker module."
+
+messenger_std "Enable threaded --enable-zts mpm_prefork module..."
 sudo a2dismod mpm_prefork
 sudo a2enmod mpm_worker
+messenger_end "Done with mpm_prefork module."
 
 PHP_MODULE_CONF="/etc/apache2/mods-available/php8.conf"
 if [[ ! -e "$PHP_MODULE_CONF" ]]; then
@@ -255,20 +244,22 @@ fi
 PHP_MODULE_LOAD="/etc/apache2/mods-available/php8.load"
 if [[ ! -e "$PHP_MODULE_LOAD" ]]; then
   sudo tee "$PHP_MODULE_LOAD" > /dev/null <<EOF
-LoadModule php_module		$PHP_DIR/php8/lib/apache2/modules/libphp.so
+LoadModule php_module $PHP_DIR/php8/lib/apache2/modules/libphp.so
 EOF
 
 fi
 
+messenger_std "Disable old and enable new $tag module..."
 sudo a2dismod php
 sudo a2enmod php8
+messenger_end "Done with script module enablement."
 
-# Restart Apache if all went well.
+messenger_std "Restarting Apache Web server..."
 sudo systemctl restart apache2
 sudo systemctl status apache2
+messenger_end "Done script restarting Apache Web server."
 
-# View any errors for Apache startup.
-printf "\n${YELLOW}Any errors starting Apache2 with PHP can be seen with 'sudo journalctl -xe' .${END_TEXT}\n"
+messenger_end "Done. Any errors starting Apache2 with PHP can be seen with 'sudo journalctl -xe' ."
 
 # An example:
 # 
