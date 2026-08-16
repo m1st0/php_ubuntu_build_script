@@ -1,19 +1,23 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# SPDX-FileCopyrightText: Copyright (c) 2019-2026 Maulik Mistry
+# SPDX-License-Identifier: Apache-2.0
+#
 # php_build_ubuntu.sh - script to compile PHP 8 for Ubuntu testing.
-
-# Copyright (c) 2019-2026 Maulik Mistry mistry01@gmail.com
 #
 # Author: Maulik Mistry
 # Please share support: https://www.paypal.com/paypalme/m1st0
 #                       https://venmo.com/code?user_id=3319592654995456106&created=1753283702
-# License: BSD License 2.0
 
+
+# Project folder where this may be running from
+ORIGINAL_DIR="$(pwd)"
 # Using BASH_SOURCE for better path reliability in Bash
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 source "${SCRIPT_DIR}/bash_color_printf.sh"
 
+
 # Desired PHP branch if not using git tag autodetection
-PHP_VERSION="8.5.1"
+PHP_VERSION="8.5.9"
 
 # I like to setup thing here so that it doesn't bother Kubuntu/Ubuntu
 PHP_DIR="/usr/local"
@@ -27,30 +31,37 @@ messenger_std "Installing dependencies...";
 # Add any missing needs from configuration area
 #sudo apt update
 #sudo apt upgrade
-#sudo apt clean
-sudo apt install libldap2-dev \
-  libldap-common \
-  libtool-bin \
-  libzip-dev \
-  lbzip2 \
-  libxml2-dev \
-  bzip2 \
+sudo apt install \
+  build-essential \
+  pkg-config \
+  ccache \
   re2c \
-  libbz2-dev \
+  libtool-bin \
   apache2-dev \
-  libjpeg-dev \
-  libxpm-dev \
-  libxpm-dev \
-  libgmp-dev \
-  libgmp3-dev \
-  libmcrypt-dev \
-  libpspell-dev \
-  librecode-dev \
+  libxml2-dev \
+  libssl-dev \
   libcurl4-openssl-dev \
-  libxft-dev \
+  libfreetype6-dev \
+  libjpeg-dev \
+  libpng-dev \
+  libwebp-dev \
+  libxpm-dev \
+  libzip-dev \
+  libbz2-dev \
+  bzip2 \
+  lbzip2 \
+  libgmp-dev \
+  libpspell-dev \
+  libldap2-dev \
+  libldap-common \
+  libsodium-dev \
+  libicu-dev \
   libonig-dev \
   libsqlite3-dev \
-  ccache
+  libxft-dev \
+  zlib1g-dev \
+  gettext
+
 
 if dpkg -l | grep -q '^ii  mysql-server'; then
   messenger_std "MySQL server detected. Using MySQL."
@@ -86,32 +97,37 @@ messenger_end "Done with LDAP setup."
 
 ## CONFIGURE
 
-if [ -d ./php-src ]; then
-  cd ./php-src 
-  git reset --hard HEAD
-  git fetch --tags --force
-  
-  # Check if we are already on the desired tag
-  if [ "$(git describe --tags --exact-match 2>/dev/null)" != "php-${PHP_VERSION}" ]; then
-    git checkout "php-${PHP_VERSION}" 2>/dev/null || git checkout -b "PHP-${PHP_VERSION}" "php-${PHP_VERSION}"
-  else
-    messenger_std "Already on php-${PHP_VERSION}"
-  fi
-
-  ## Obtain latest tag ##
-  # Sometimes the latest tag is not properly found using either of the following
-  # or we don't want the latest Release Candidate
-  #tag=$(git describe --tags `git rev-list --tags --max-count=1`)
-  tag=$(git describe --tags `git rev-list --branches --max-count=1`)
-  if [ "$tag" != "php-${PHP_VERSION}" ]; then
-    git switch --create ${tag} ${tag}
-  fi
+if [ -d "./php-src" ]; then
+    cd "./php-src" || exit 1
+    git reset --hard HEAD
+    git fetch --tags --force
 else
-  git clone https://github.com/php/php-src
-  cd ./php-src
-  tag=$(git describe --tags `git rev-list --branches --max-count=1`)
-  git checkout tags/$tag -b $tag
-  #git switch --create PHP-${PHP_VERSION} php-${PHP_VERSION}
+    git clone https://github.com/php/php-src "./php-src"
+    cd "./php-src" || exit 1
+fi
+
+TARGET_TAG="php-${PHP_VERSION}"
+
+# If the requested tag doesn't exist, fall back to the latest stable release.
+if ! git rev-parse -q --verify "refs/tags/$TARGET_TAG" >/dev/null; then
+    messenger_warn "$TARGET_TAG not found. Looking for latest stable PHP release..."
+
+    TARGET_TAG=$(
+        git tag -l 'php-*' \
+        | grep -Ev '(alpha|beta|RC)' \
+        | sort -V \
+        | tail -n1
+    )
+
+    messenger_std "Using $TARGET_TAG"
+fi
+
+CURRENT_TAG="$(git tag --points-at HEAD | head -n1)"
+
+if [ "$CURRENT_TAG" != "$TARGET_TAG" ]; then
+    git switch --detach "refs/tags/$TARGET_TAG"
+else
+    messenger_std "Already on $TARGET_TAG"
 fi
 
 messenger_std "Running 'buildconf' ..."
@@ -143,28 +159,27 @@ export CC="ccache gcc" && export CXX="ccache g++"
     --with-iconv \
     --with-gmp \
     --with-pspell \
-    --with-zlib-dir=/usr \
+    --enable-gd \
     --enable-gd-jis-conv \
+    --with-freetype \
+    --with-jpeg \
+    --with-webp \
+    --with-xpm \
     --with-openssl \
-    --with-gettext=/usr \
-    --with-zlib=/usr \
+    --with-gettext \
+    --with-zlib \
     --with-bz2 \
     --with-apxs2=/usr/bin/apxs \
     --with-ldap \
-    --with-mysql=mysqlnd \
     --with-mysqli=mysqlnd \
     --with-pdo-mysql=mysqlnd \
-    --with-xdebug
- #   --with-mcrypt \
- #   --enable-wddx \
- #   --with-gd \
- #   --with-jpeg-dir=/usr \
- #   --with-png-dir=/usr \
- #   --with-xpm-dir=/usr \
- #   --with-freetype-dir=/usr \
- #   --enable-gd-native-ttf \
- #   --with-recode=/usr \
- #   --without-xml
+    --with-sodium \
+    --enable-dom \
+    --enable-libxml \
+    --enable-simplexml \
+    --enable-xml \
+    --enable-xmlreader \
+    --enable-xmlwriter
 
  messenger_end "Done with 'configure' ."
 
@@ -275,5 +290,5 @@ messenger_end "Done. Any errors starting Apache2 with PHP can be seen with 'sudo
 #    </Directory>
 #</IfModule>"
 
-# Return to reprevious location
-cd -
+# Return to project folder
+cd "$ORIGINAL_DIR" || exit 1

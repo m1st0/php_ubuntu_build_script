@@ -1,3 +1,8 @@
+
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2019–2026 Maulik Mistry
+SPDX-License-Identifier: Apache-2.0
+-->
 # PHP Build Script for Ubuntu
 
 **`php_build_ubuntu.sh`**  
@@ -9,7 +14,7 @@ Automates building and installing PHP 8.x from source for testing on Ubuntu fl
 
 This script compiles PHP 8.x by version choice from source, installs common extensions (mbstring, GD, curl, LDAP, etc.), and sets up MySQL or MariaDB support. It also configures Apache integration and handles alternative PHP paths.
 
-Built and maintained by Maulik Mistry (m1st0) ([original Gist](https://gist.github.com/m1st0/1c41b8d0eb42169ce71a))
+Author: Maulik Mistry (m1st0) ([original Gist](https://gist.github.com/m1st0/1c41b8d0eb42169ce71a))
 
 ---
 
@@ -51,7 +56,7 @@ sudo ./php_build_ubuntu.sh
 
 ## 📄 License
 
-This project is licensed under the **BSD-2-Clause** license.  
+This project is licensed under **Apache License 2.0**.  
 See [`LICENSE.txt`](LICENSE.txt) for full details.
 
 ---
