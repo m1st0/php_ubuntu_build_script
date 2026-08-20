@@ -12,9 +12,9 @@
 # Project folder where this may be running from
 ORIGINAL_DIR="$(pwd)"
 # Using BASH_SOURCE for better path reliability in Bash
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-source "${SCRIPT_DIR}/bash_color_printf.sh"
-
+SCRIPT_PATH="$(readlink -f -- "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(dirname -- "$SCRIPT_PATH")"
+source "${SCRIPT_DIR}/vendor/tput_shell_colorize/tput_shell_colorize.sh"
 
 # Desired PHP branch if not using git tag autodetection
 PHP_VERSION="8.5.9"

@@ -32,22 +32,28 @@ Author: Maulik Mistry (m1st0) ([original Gist](https://gist.github.com/m1st0/1c4
 
 1. Clone the repo:
 
-```bash
-git clone https://github.com/yourusername/php-build-ubuntu.git
-cd php-build-ubuntu
-```
+    ```bash
+    git clone --recurse-submodules https://github.com/yourusername/php-build-ubuntu.git php-build-ubuntu
+    cd php-build-ubuntu
+    ```
+
+    If the project was already cloned without its submodules:
+
+    ```
+    git submodule update --init --recursive
+    ```
 
 2. Make executable:
 
-```bash
-chmod +x php_build_ubuntu.sh
-```
+    ```bash
+    chmod +x php_build_ubuntu.sh
+    ```
 
 3. Run (may require sudo):
 
-```bash
-sudo ./php_build_ubuntu.sh
-```
+    ```bash
+    sudo ./php_build_ubuntu.sh
+    ```
 
 4. Follow the prompts to select PHP version (default is 8.4.9) and confirm compilation options.
 5. You may change the default version by obtaining tags from the [php-src repository](https://github.com/php/php-src/tags) or by checking out a version tag inside the `php-src` folder that the script creates on first run, and updating the `PHP_VERSION` variable accordingly.
