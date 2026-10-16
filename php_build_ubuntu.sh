@@ -17,7 +17,7 @@ SCRIPT_DIR="$(dirname -- "$SCRIPT_PATH")"
 source "${SCRIPT_DIR}/vendor/tput_shell_colorize/tput_shell_colorize.sh"
 
 # Desired PHP branch if not using git tag autodetection
-PHP_VERSION="8.5.9"
+PHP_VERSION="8.5.11"
 
 # I like to setup thing here so that it doesn't bother Kubuntu/Ubuntu
 PHP_DIR="/usr/local"
