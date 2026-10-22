@@ -17,7 +17,7 @@ SCRIPT_DIR="$(dirname -- "$SCRIPT_PATH")"
 source "${SCRIPT_DIR}/vendor/tput_shell_colorize/tput_shell_colorize.sh"
 
 # Desired PHP branch if not using git tag autodetection
-PHP_VERSION="8.5.11"
+PHP_VERSION="8.5.12"
 
 # I like to setup thing here so that it doesn't bother Kubuntu/Ubuntu
 PHP_DIR="/usr/local"
@@ -62,22 +62,37 @@ sudo apt install \
   zlib1g-dev \
   gettext
 
+# Detect installed MySQL and MariaDB servers.
+USE_MYSQL=0
+USE_MARIADB=0
 
-if dpkg -l | grep -q '^ii  mysql-server'; then
-  messenger_std "MySQL server detected. Using MySQL."
+if dpkg-query -W -f='${db:Status-Abbrev}' mysql-server 2>/dev/null | grep -q '^ii'; then
   USE_MYSQL=1
-elif dpkg -l | grep -q '^ii  mariadb-server'; then
-  messenger_std "MariaDB server detected. Using MariaDB."
-  USE_MARIADB=1
-else
-  messenger_end "No MySQL or MariaDB found. Cannot install database dependencies."
-  exit 1
 fi
 
-if [ "$USE_MYSQL" = "1" ]; then
-  sudo apt install libmysqlclient-dev
+if dpkg-query -W -f='${db:Status-Abbrev}' mariadb-server 2>/dev/null | grep -q '^ii'; then
+  USE_MARIADB=1
+fi
+
+# Report detected database servers.
+if [ "$USE_MYSQL" = "1" ] && [ "$USE_MARIADB" = "1" ]; then
+    messenger_std "Both MySQL and MariaDB servers detected."
+elif [ "$USE_MYSQL" = "1" ]; then
+    messenger_std "MySQL server detected. Using MySQL."
 elif [ "$USE_MARIADB" = "1" ]; then
-  sudo apt install libmariadb-dev
+    messenger_std "MariaDB server detected. Using MariaDB."
+else
+    messenger_end "No MySQL or MariaDB server found. Cannot install database dependencies."
+    exit 1
+fi
+
+# Install development dependencies for detected servers.
+if [ "$USE_MYSQL" = "1" ]; then
+    sudo apt install libmysqlclient-dev || exit 1
+fi
+
+if [ "$USE_MARIADB" = "1" ]; then
+    sudo apt install libmariadb-dev || exit 1
 fi
 messenger_end "Done installing dependencies."
 
@@ -127,7 +142,7 @@ CURRENT_TAG="$(git tag --points-at HEAD | head -n1)"
 if [ "$CURRENT_TAG" != "$TARGET_TAG" ]; then
     git switch --detach "refs/tags/$TARGET_TAG"
 else
-    messenger_std "Already on $TARGET_TAG"
+    messenger_std "Already on $TARGET_TAG ."
 fi
 
 messenger_std "Running 'buildconf' ..."
@@ -270,7 +285,7 @@ messenger_end "Done with script module enablement."
 
 messenger_std "Restarting Apache Web server..."
 sudo systemctl restart apache2
-sudo systemctl status apache2
+sudo systemctl status apache2 --no-pager
 messenger_end "Done script restarting Apache Web server."
 
 messenger_end "Done. Any errors starting Apache2 with PHP can be seen with 'sudo journalctl -xe' ."

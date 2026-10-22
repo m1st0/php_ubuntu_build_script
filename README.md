@@ -1,45 +1,64 @@
-
 <!--
 SPDX-FileCopyrightText: Copyright (c) 2019–2026 Maulik Mistry
 SPDX-License-Identifier: Apache-2.0
 -->
 # PHP Build Script for Ubuntu
 
-**`php_build_ubuntu.sh`**  
-Automates building and installing PHP 8.x from source for testing on Ubuntu flavors with optional MySQL/MariaDB support and Apache integration.
+**`php_build_ubuntu.sh`**
 
----
+Automates building and installing PHP 8.x from source for independent developer
+testing on Ubuntu flavors, with optional MySQL/MariaDB support and Apache 
+integration.
 
-## 🚀 About
+**Development history and compatibility**
 
-This script compiles PHP 8.x by version choice from source, installs common extensions (mbstring, GD, curl, LDAP, etc.), and sets up MySQL or MariaDB support. It also configures Apache integration and handles alternative PHP paths.
+The Git commit history documents the project's development and version-specific
+changes per Ubuntu release, Apache version, PHP version, and selected build 
+options.
 
-Author: Maulik Mistry (m1st0) ([original Gist](https://gist.github.com/m1st0/1c41b8d0eb42169ce71a))
+**Important considerations**
 
----
+This script compiles PHP 8.x from source, builds common extensions such as 
+mbstring, GD, cURL, and LDAP, and configures MySQL or MariaDB support. It also 
+configures Apache integration and handles Ubuntu's `update-alternatives` paths. 
+Run it in a virtual machine or another non-production environment first,
+particularly when testing PHP versions or configuration changes. Review the 
+script before running it and back up any existing configuration you need to 
+preserve.
+
+**Scope**
+
+This project is intended for local development and testing by independent 
+developers. It is not a substitute for official security updates or a guarantee
+of production readiness. We can discuss CI/CD and automated testing separately,
+of course.
+
+Author: Maulik Mistry
+
+Please share support:
+
+- **PayPal**: [Paypal](https://www.paypal.com/paypalme/m1st0)
+- **Venmo**: [Venmo](https://venmo.com/code?user_id=3319592654995456106&created=1753283702)
 
 ## ✅ Features
 
-- Compile PHP 8 from source with popular extensions
+- Compile PHP 8.x from source with popular extensions
 - Auto-detect MySQL vs. MariaDB
-- Apache module configuration and update-alternatives
-- Error-handling and environment setup
-- Color-coded script output for clarity
-
----
+- Apache module configuration and `update-alternatives`
+- Some error-handling and environment setup
 
 ## 🛠️ Usage
 
 1. Clone the repo:
 
     ```bash
-    git clone --recurse-submodules https://github.com/yourusername/php-build-ubuntu.git php-build-ubuntu
-    cd php-build-ubuntu
+    git clone --recurse-submodules https://github.com/m1st0/php_ubuntu_build_script php_ubuntu_build_script
+    cd php_ubuntu_build_script
     ```
 
     If the project was already cloned without its submodules:
 
-    ```
+    ```bash
     git submodule update --init --recursive
     ```
 
@@ -52,26 +71,13 @@ Author: Maulik Mistry (m1st0) ([original Gist](https://gist.github.com/m1st0/1c4
 3. Run (may require sudo):
 
     ```bash
-    sudo ./php_build_ubuntu.sh
+    ./php_build_ubuntu.sh
     ```
 
-4. Follow the prompts to select PHP version (default is 8.4.9) and confirm compilation options.
-5. You may change the default version by obtaining tags from the [php-src repository](https://github.com/php/php-src/tags) or by checking out a version tag inside the `php-src` folder that the script creates on first run, and updating the `PHP_VERSION` variable accordingly.
-
----
+4. You may change the default version by obtaining tags from the 
+    [php-src repository](https://github.com/php/php-src/tags) and updating the `PHP_VERSION` variable accordingly.
 
 ## 📄 License
 
-This project is licensed under **Apache License 2.0**.  
-See [`LICENSE.txt`](LICENSE.txt) for full details.
-
----
-
-## 🙏 Support
-
-If you find this script helpful, consider supporting me:
-
-- **PayPal**: [Paypal](https://www.paypal.com/paypalme/m1st0)
-- **Venmo**: [Venmo](https://venmo.com/code?user_id=3319592654995456106&created=1753283702)
-
-_Lets keep each other going, safe, and well._
+This project is licensed under **Apache License 2.0**. See [`LICENSE.txt`](LICENSE.txt) for full 
+details.
